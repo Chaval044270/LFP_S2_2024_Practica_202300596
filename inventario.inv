@@ -1,0 +1,5 @@
+crear_equipo Lapices;100;2.50;BodegaA
+crear_equipo Computadoras;50;3000.00;BodegaB
+crear_equipo Escritorios;75;100.75;BodegaC
+crear_equipo Computadoras;25;3000.00;BodegaD
+crear_equipo Borradores;200;1.50;BodegaB
