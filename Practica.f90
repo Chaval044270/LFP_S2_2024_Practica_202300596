@@ -12,86 +12,6 @@ module CargarInventario
 
     contains
 
-        subroutine gestionarInventario(nombreDeArchivo)
-            character(len=*) :: nombreDeArchivo
-            character(len=100) :: linea
-            character(len=100) :: comando
-            character(len=100) :: datos
-            integer :: inicio, fin
-            integer :: contador
-            integer :: i, iostat, iostat_read
-            character(len=200) :: datosTemporal
-            character(len=50) :: campos(3)
-            integer :: cantidad_temp
-
-            open(15, file = nombreDeArchivo, status = 'old', action = 'read', iostat = iostat)
-
-            if (iostat /= 0) then
-                print *, 'Error: No se pudo abrir el archivo ', trim(nombreDeArchivo)
-                return
-            end if
-
-            contador = 0
-
-            do
-                read(15, '(A)', iostat=iostat) linea
-
-                if (iostat /= 0) exit
-
-                inicio = 1
-                fin = scan(linea(inicio:), ' ')
-
-                if (fin == 0) then
-                    comando = trim(linea(inicio:))
-                    datos = ''
-                else
-                    comando = trim(linea(inicio:inicio+fin-2))
-                    datos = trim(linea(inicio+fin:))
-                end if
-
-                datosTemporal = datos
-                inicio = 1
-
-                do i = 1,3
-                    fin = index(datosTemporal(inicio:), ';')
-                    if (fin == 0 .and. i == 3) then
-                        campos(i) = datosTemporal(inicio:)
-                        exit
-                    else 
-                        campos(i) = datosTemporal(inicio:inicio+fin-2)
-                        inicio = inicio + fin
-                    end if
-                end do
-
-                read(campos(2), *, iostat=iostat_read) cantidad_temp
-
-                do i = 1, size(listaInventario)
-                    if (trim(listaInventario(i)%nombre) == trim(campos(1)) .and. trim(listaInventario(i)%ubicacion) == trim(campos(3))) then
-                        if (comando == 'agregar_stock') then
-                            listaInventario(i)%cantidad = listaInventario(i)%cantidad + cantidad_temp
-                            print *, 'Se agregaron ', cantidad_temp, ' unidades de ', trim(campos(1)), ' en ', trim(campos(3))
-                        else if (comando == 'eliminar_equipo') then
-                            if (cantidad_temp > listaInventario(i)%cantidad) then
-                                print *, 'Error: La cantidad a eliminar es mayor que la cantidad en la ubicación'
-                            else
-                                listaInventario(i)%cantidad = listaInventario(i)%cantidad - cantidad_temp
-                                print *, 'Se eliminaron ', cantidad_temp, ' unidades de ', trim(campos(1)), ' en ', trim(campos(3))
-                            end if
-                        end if
-                        exit
-                    end if
-                end do
-
-                if (i > size(listaInventario)) print*, 'Error: El equipo no existe en esa ubicacion'
-
-                contador = contador + 1
-
-            end do
-
-            close(15)
-
-        end subroutine gestionarInventario
-
     subroutine crearEquipo(nombreDeArchivo)
         character(len=14), intent(in) :: nombreDeArchivo
         character(len=100) :: linea
@@ -160,7 +80,7 @@ module CargarInventario
             listaInventario(contador)%nombre = trim(nombres_temp)
             print *, 'Cantidad: ', cantidad_temp
             read(cantidad_temp, *, iostat=i) listaInventario(contador)%cantidad
-            print *, 'Precio unitario: ', precio_unitario_temp
+            print *, 'Precio unitario: $ ', precio_unitario_temp
             read(precio_unitario_temp, *, iostat=i) listaInventario(contador)%precioUnitario
             print *, 'Ubicacion: ', ubicacion_temp
             listaInventario(contador)%ubicacion = trim(ubicacion_temp)
@@ -178,9 +98,91 @@ module CargarInventario
 
     end subroutine crearEquipo
 
+    subroutine gestionarInventario(nombreDeArchivo)
+        character(len=*) :: nombreDeArchivo
+        character(len=100) :: linea
+        character(len=100) :: comando
+        character(len=100) :: datos
+        integer :: inicio, fin
+        integer :: contador
+        integer :: i, iostat, iostat_read
+        character(len=200) :: datosTemporal
+        character(len=50) :: campos(3)
+        integer :: cantidad_temp
+
+        open(15, file = nombreDeArchivo, status = 'old', action = 'read', iostat = iostat)
+
+        if (iostat /= 0) then
+            print *, 'Error: No se pudo abrir el archivo ', trim(nombreDeArchivo)
+            return
+        end if
+
+        contador = 0
+
+        do
+            read(15, '(A)', iostat=iostat) linea
+
+            if (iostat /= 0) exit
+
+            inicio = 1
+            fin = scan(linea(inicio:), ' ')
+
+            if (fin == 0) then
+                comando = trim(linea(inicio:))
+                datos = ''
+            else
+                comando = trim(linea(inicio:inicio+fin-2))
+                datos = trim(linea(inicio+fin:))
+            end if
+
+            datosTemporal = datos
+            inicio = 1
+
+            do i = 1,3
+                fin = index(datosTemporal(inicio:), ';')
+                if (fin == 0 .and. i == 3) then
+                    campos(i) = datosTemporal(inicio:)
+                    exit
+                else 
+                    campos(i) = datosTemporal(inicio:inicio+fin-2)
+                    inicio = inicio + fin
+                end if
+            end do
+
+            read(campos(2), *, iostat=iostat_read) cantidad_temp
+
+            do i = 1, size(listaInventario)
+                if (trim(listaInventario(i)%nombre) == trim(campos(1)) .and. trim(listaInventario(i)%ubicacion) == trim(campos(3))) then
+                    if (comando == 'agregar_stock') then
+                        listaInventario(i)%cantidad = listaInventario(i)%cantidad + cantidad_temp
+                        print *, 'Se agregaron ', cantidad_temp, ' unidades de ', trim(campos(1)), ' en ', trim(campos(3))
+                    else if (comando == 'eliminar_equipo') then
+                        if (cantidad_temp > listaInventario(i)%cantidad) then
+                            print *, 'Error: La cantidad a eliminar del equipo ', trim(campos(1)), ' es mayor que la cantidad en la ubicacion ', trim(campos(3))
+                        else
+                            listaInventario(i)%cantidad = listaInventario(i)%cantidad - cantidad_temp
+                            print *, 'Se eliminaron ', cantidad_temp, ' unidades de ', trim(campos(1)), ' en ', trim(campos(3))
+                        end if
+                    end if
+                    exit
+                end if
+            end do
+
+            if (i > size(listaInventario)) print*, 'Error: El equipo ', trim(campos(1)), ' no existe en la ubicacion ', trim(campos(3))
+
+            contador = contador + 1
+
+        end do
+
+        close(15)
+
+    end subroutine gestionarInventario
+
     subroutine crearInforme()
         integer :: i
         integer :: unidad = 10
+
+        print *, 'Creando informe de inventario...'
 
         open(unit=unidad, file='informe.txt', status='unknown', action='write')
 
@@ -203,10 +205,7 @@ end module CargarInventario
 
 program Practica
     use CargarInventario
-    ! character(len=100) :: nombreArchivo
-    ! integer :: numeroInventario
     integer :: opcionMenu, iostat
-    ! character(len=100) :: error
 
     do
         print *, ''
